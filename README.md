@@ -6,10 +6,10 @@ PaaS : http://en.wikipedia.org/wiki/Platform_as_a_service
 
 ### China
 
-* Aliyun Cloud Engine : http://www.aliyun.com/product/ace/
-* Baidu App Enginee : http://developer.baidu.com/cloud/rt
-* Sina App Engine : http://sae.sina.com.cn/
-* Sohu Cloudscape : http://cloudscape.sohu.com/
+* [Aliyun Cloud Engine](http://www.aliyun.com/product/ace/)
+* [Baidu App Enginee](http://developer.baidu.com/cloud/rt)
+* [Sina App Engine](http://sae.sina.com.cn/)
+* [Sohu Cloudscape](http://cloudscape.sohu.com/)
 
 ### US
 
