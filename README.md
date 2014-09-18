@@ -1,6 +1,9 @@
 # MediaWiki for PaaS
 
-[TOC]
+* [Instroduction](#Instroduction)
+* [Platforms](#Platforms)
+ * [China](#China)
+ * [Others](#Others)
 
 ## Instroduction
 PaaS : http://en.wikipedia.org/wiki/Platform_as_a_service
