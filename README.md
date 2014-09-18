@@ -1,9 +1,11 @@
-# Instroduction
+# MediaWiki for PaaS
+
+[TOC]
+
+## Instroduction
 PaaS : http://en.wikipedia.org/wiki/Platform_as_a_service
 
-[Toc]
-
-## Examples
+## Platforms
 
 ### China
 
@@ -21,7 +23,7 @@ PaaS : http://en.wikipedia.org/wiki/Platform_as_a_service
 | [Sina App Engine](http://sae.sina.com.cn/) | [1.23.x-for-SAE](https://github.com/JmmBite/MediaWiki-for-PaaS/tree/1.23.x-for-SAE) , [1.22.x-for-SAE](https://github.com/JmmBite/MediaWiki-for-PaaS/tree/1.22.x-for-SAE) |
 | [Sohu Cloudscape](http://cloudscape.sohu.com/) | |
 
-### US
+### Others
 
 * AppearIQ
 * AppScale
