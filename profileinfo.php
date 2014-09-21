@@ -25,7 +25,7 @@
  * @file
  */
 
-ini_set( 'zlib.output_compression', 'off' );
+//ini_set( 'zlib.output_compression', 'off' );
 
 $wgEnableProfileInfo = $wgProfileToDatabase = false;
 require __DIR__ . '/includes/WebStart.php';

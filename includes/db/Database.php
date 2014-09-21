@@ -256,7 +256,7 @@ abstract class DatabaseBase implements IDatabase, DatabaseType {
 
 	protected $preparedArgs;
 
-	protected $htmlErrors;
+	//protected $htmlErrors;
 
 	protected $delimiter = ';';
 
@@ -885,7 +885,7 @@ abstract class DatabaseBase implements IDatabase, DatabaseType {
 
 	protected function installErrorHandler() {
 		$this->mPHPError = false;
-		$this->htmlErrors = ini_set( 'html_errors', '0' );
+		//$this->htmlErrors = ini_set( 'html_errors', '0' );
 		set_error_handler( array( $this, 'connectionErrorHandler' ) );
 	}
 
@@ -894,9 +894,9 @@ abstract class DatabaseBase implements IDatabase, DatabaseType {
 	 */
 	protected function restoreErrorHandler() {
 		restore_error_handler();
-		if ( $this->htmlErrors !== false ) {
+		/*if ( $this->htmlErrors !== false ) {
 			ini_set( 'html_errors', $this->htmlErrors );
-		}
+		}*/
 		if ( $this->mPHPError ) {
 			$error = preg_replace( '!\[<a.*</a>\]!', '', $this->mPHPError );
 			$error = preg_replace( '!^.*?:\s?(.*)$!', '$1', $error );

@@ -130,7 +130,7 @@ class StreamFile {
 		if ( !empty( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) ) {
 			$modsince = preg_replace( '/;.*$/', '', $_SERVER['HTTP_IF_MODIFIED_SINCE'] );
 			if ( wfTimestamp( TS_UNIX, $info['mtime'] ) <= strtotime( $modsince ) ) {
-				ini_set( 'zlib.output_compression', 0 );
+				//ini_set( 'zlib.output_compression', 0 );
 				header( "HTTP/1.0 304 Not Modified" );
 				return self::NOT_MODIFIED; // ok
 			}

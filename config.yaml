@@ -1,0 +1,17 @@
+name: <<appname>>
+version: <<version>>
+
+handle:
+
+#http://sae.sina.com.cn/doc/php/runtime.html#php-app-config
+#URL Rewrite
+- hostaccess: if(path ~ "/cache/") deny "*"
+- hostaccess: if(path ~ "/includes/") deny "*"
+- hostaccess: if(path ~ "/languages/") deny "*"
+- hostaccess: if(path ~ "/maintenance/") deny "*"
+- hostaccess: if(path ~ "/match/") deny "*"
+- hostaccess: if(path ~ "/serialized/") deny "*"
+- hostaccess: if(path ~ "/maintenance/archives/") deny "*"
+- rewrite: if( query_string ~ "/(.*):(.*)" ) goto "/index.php/$1:$2"
+- rewrite: if( !is_file() && !is_dir() && query_string !~ "index\.php" ) goto "index.php/{QUERY_STRING}"
+...

@@ -2590,6 +2590,7 @@ function wfTempDir() {
  * @return bool
  */
 function wfMkdirParents( $dir, $mode = null, $caller = null ) {
+	return true;
 	global $wgDirectoryMode;
 
 	if ( FileBackend::isStoragePath( $dir ) ) { // sanity

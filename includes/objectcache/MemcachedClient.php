@@ -1249,5 +1249,6 @@ class MWMemcached {
 
 // }}}
 
-class MemCachedClientforWiki extends MWMemcached {
-}
+/*class MemCachedClientforWiki extends MWMemcached {
+}*/
+require_once "$IP/extensions/SinaAppEngine/SinaAppEngineMemcachedClient.php";

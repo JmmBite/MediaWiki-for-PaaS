@@ -190,11 +190,6 @@ class UserMailer {
 			return Status::newFatal( 'user-mail-no-body' );
 		}
 
-		if ( !$wgAllowHTMLEmail && is_array( $body ) ) {
-			// HTML not wanted.  Dump it.
-			$body = $body['text'];
-		}
-
 		wfDebug( __METHOD__ . ': sending mail to ' . implode( ', ', $to ) . "\n" );
 
 		# Make sure we have at least one address
@@ -209,178 +204,64 @@ class UserMailer {
 			return Status::newFatal( 'user-mail-no-addy' );
 		}
 
-		# Forge email headers
-		# -------------------
-		#
-		# WARNING
-		#
-		# DO NOT add To: or Subject: headers at this step. They need to be
-		# handled differently depending upon the mailer we are going to use.
-		#
-		# To:
-		#  PHP mail() first argument is the mail receiver. The argument is
-		#  used as a recipient destination and as a To header.
-		#
-		#  PEAR mailer has a recipient argument which is only used to
-		#  send the mail. If no To header is given, PEAR will set it to
-		#  to 'undisclosed-recipients:'.
-		#
-		#  NOTE: To: is for presentation, the actual recipient is specified
-		#  by the mailer using the Rcpt-To: header.
-		#
-		# Subject:
-		#  PHP mail() second argument to pass the subject, passing a Subject
-		#  as an additional header will result in a duplicate header.
-		#
-		#  PEAR mailer should be passed a Subject header.
-		#
-		# -- hashar 20120218
-
-		$headers['From'] = $from->toString();
-		$headers['Return-Path'] = $from->address;
-
-		if ( $replyto ) {
-			$headers['Reply-To'] = $replyto->toString();
-		}
-
-		$headers['Date'] = MWTimestamp::getLocalInstance()->format( 'r' );
-		$headers['Message-ID'] = self::makeMsgId();
-		$headers['X-Mailer'] = 'MediaWiki mailer';
-
-		# Line endings need to be different on Unix and Windows due to
-		# the bug described at http://trac.wordpress.org/ticket/2603
-		if ( wfIsWindows() ) {
-			$endl = "\r\n";
-		} else {
-			$endl = "\n";
-		}
-
-		if ( is_array( $body ) ) {
-			// we are sending a multipart message
-			wfDebug( "Assembling multipart mime email\n" );
-			if ( !stream_resolve_include_path( 'Mail/mime.php' ) ) {
-				wfDebug( "PEAR Mail_Mime package is not installed. Falling back to text email.\n" );
-				// remove the html body for text email fall back
-				$body = $body['text'];
-			} else {
-				require_once 'Mail/mime.php';
-				if ( wfIsWindows() ) {
-					$body['text'] = str_replace( "\n", "\r\n", $body['text'] );
-					$body['html'] = str_replace( "\n", "\r\n", $body['html'] );
-				}
-				$mime = new Mail_mime( array( 'eol' => $endl, 'text_charset' => 'UTF-8', 'html_charset' => 'UTF-8' ) );
-				$mime->setTXTBody( $body['text'] );
-				$mime->setHTMLBody( $body['html'] );
-				$body = $mime->get(); // must call get() before headers()
-				$headers = $mime->headers( $headers );
-			}
-		}
-		if ( $mime === null ) {
-			// sending text only, either deliberately or as a fallback
-			if ( wfIsWindows() ) {
-				$body = str_replace( "\n", "\r\n", $body );
-			}
-			$headers['MIME-Version'] = '1.0';
-			$headers['Content-type'] = ( is_null( $contentType ) ?
-				'text/plain; charset=UTF-8' : $contentType );
-			$headers['Content-transfer-encoding'] = '8bit';
-		}
-
-		$ret = wfRunHooks( 'AlternateUserMailer', array( $headers, $to, $from, $subject, $body ) );
-		if ( $ret === false ) {
-			// the hook implementation will return false to skip regular mail sending
-			return Status::newGood();
-		} elseif ( $ret !== true ) {
-			// the hook implementation will return a string to pass an error message
-			return Status::newFatal( 'php-mail-error', $ret );
-		}
-
 		if ( is_array( $wgSMTP ) ) {
 			#
-			# PEAR MAILER
+			# saemail.class.php
 			#
-
-			if ( !stream_resolve_include_path( 'Mail.php' ) ) {
-				throw new MWException( 'PEAR mail package is not installed' );
-			}
-			require_once 'Mail.php';
+			$options = array();
+			$options['from'] = $wgSMTP['username'];//$from->toString();
+			#$options['to'] = ;
+			#$options['cc'] = $from->address
+			#$options['Reply-To'] = $replyto ? $replyto->address : $from->address;
+			$options['smtp_host'] = $wgSMTP['smtp'];
+			$options['smtp_port'] = $wgSMTP['port'] ? $wgSMTP['port'] : 25;
+			$options['smtp_username'] = $wgSMTP['username'];
+			$options['smtp_password'] = $wgSMTP['password'];
+			$options['subject'] = $subject;//self::quotedPrintable( $subject );
+			$options['content'] = is_array( $body ) ? $body['text'] : $body;
+			$options['content_type'] = $wgAllowHTMLEmail ? 'HTML' : 'TEXT';
+			$options['charset'] = $wgSMTP['charset'] ? $wgSMTP['charset'] : utf8;
+			$options['tls'] = $wgSMTP['tls'] ? 1 : 0;
+			#$options['compress'] = ;
+			#$options['callback_url'] = ;\
 
 			wfSuppressWarnings();
+			$mail = new SaeMail($options);
+			#$mail->setAttach( array( 'my_photo' => '照片的二进制数据' ) );
+			wfDebug( "Sending mail via SaeMail\n" );
 
-			// Create the mail object using the Mail::factory method
-			$mail_object =& Mail::factory( 'smtp', $wgSMTP );
-			if ( PEAR::isError( $mail_object ) ) {
-				wfDebug( "PEAR::Mail factory failed: " . $mail_object->getMessage() . "\n" );
-				wfRestoreWarnings();
-				return Status::newFatal( 'pear-mail-error', $mail_object->getMessage() );
+			//var_dump($to);// array( object(MailAddress) )
+			$chunks = array();
+			foreach ( $to as $t ) {
+				$chunks[] = $t->address;
 			}
-
-			wfDebug( "Sending mail via PEAR::Mail\n" );
-
-			$headers['Subject'] = self::quotedPrintable( $subject );
-
-			# When sending only to one recipient, shows it its email using To:
-			if ( count( $to ) == 1 ) {
-				$headers['To'] = $to[0]->toString();
-			}
-
 			# Split jobs since SMTP servers tends to limit the maximum
 			# number of possible recipients.
-			$chunks = array_chunk( $to, $wgEnotifMaxRecips );
+			$chunks = array_chunk( $chunks, $wgEnotifMaxRecips );
+			//var_dump($chunks);
 			foreach ( $chunks as $chunk ) {
-				$status = self::sendWithPear( $mail_object, $chunk, $headers, $body );
+				$options['to'] = implode(",", $chunk);
+				$mail->setOpt($options);
+				$sent = $mail->send();
+				//$sent = $mail->quickSend( $options['to'], $options['subject'], $options['content'], $options['smtp_username'], $options['smtp_password'], $options['smtp_host'], $options['smtp_port'], $options['tls'] );
 				# FIXME : some chunks might be sent while others are not!
-				if ( !$status->isOK() ) {
-					wfRestoreWarnings();
-					return $status;
+				if ( ! $sent ) {
+					$mErrorString = $mail->errno() . " : " . $mail->errmsg();
+					wfDebug( "Unknown error sending mail: " . $mErrorString . "\n" );
+					return Status::newFatal( $mErrorString );
 				}
+				//var_dump($body);
+				//var_dump($options);
 			}
 			wfRestoreWarnings();
 			return Status::newGood();
 		} else {
 			#
-			# PHP mail()
+			# mail no setting
 			#
-			if ( count( $to ) > 1 ) {
-				$headers['To'] = 'undisclosed-recipients:;';
-			}
-			$headers = self::arrayToHeaderString( $headers, $endl );
-
-			wfDebug( "Sending mail via internal mail() function\n" );
-
-			self::$mErrorString = '';
-			$html_errors = ini_get( 'html_errors' );
-			ini_set( 'html_errors', '0' );
-			set_error_handler( 'UserMailer::errorHandler' );
-
-			try {
-				$safeMode = wfIniGetBool( 'safe_mode' );
-
-				foreach ( $to as $recip ) {
-					if ( $safeMode ) {
-						$sent = mail( $recip, self::quotedPrintable( $subject ), $body, $headers );
-					} else {
-						$sent = mail( $recip, self::quotedPrintable( $subject ), $body, $headers, $wgAdditionalMailParams );
-					}
-				}
-			} catch ( Exception $e ) {
-				restore_error_handler();
-				throw $e;
-			}
-
-			restore_error_handler();
-			ini_set( 'html_errors', $html_errors );
-
-			if ( self::$mErrorString ) {
-				wfDebug( "Error sending mail: " . self::$mErrorString . "\n" );
-				return Status::newFatal( 'php-mail-error', self::$mErrorString );
-			} elseif ( ! $sent ) {
-				// mail function only tells if there's an error
-				wfDebug( "Unknown error sending mail\n" );
-				return Status::newFatal( 'php-mail-error-unknown' );
-			} else {
-				return Status::newGood();
-			}
+			$mErrorString = 'mail no setting';
+			wfDebug( "Error sending mail: " . $mErrorString . "\n" );
+			return Status::newFatal( 'php-mail-error', $mErrorString );
 		}
 	}
 
